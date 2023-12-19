@@ -1,7 +1,26 @@
-import React, {useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import SeatsioSeatingChart from '@seatsio/seatsio-react-native';
 import CheckOut from './CheckOut';
+
+const Client = {
+  holdTokens: {
+    create: async () => {
+      // Simulate creating a hold token
+      return {holdToken: 'mockHoldToken'};
+    },
+  },
+  events: {
+    hold: async (eventKey, seats, holdToken) => {
+      // Simulate holding seats
+      console.log(
+        `Holding seats ${seats.join(
+          ', ',
+        )} for event ${eventKey} with hold token ${holdToken}`,
+      );
+    },
+  },
+};
 
 const SimpleSeatingChartWithChangeConfig = () => {
   const [selectedTicket, setSelectedTicket] = useState([]);
@@ -28,36 +47,6 @@ const SimpleSeatingChartWithChangeConfig = () => {
     setSelectedTicket([...selectedTicket, seatInfo]);
 
     const selectedCategory = selection.sectionCategory;
-    const selectedTicketType = findSelectedTicketType(
-      selectedCategory,
-      selection.ticketType,
-    );
-  };
-  // console.log('SelectedTicketType:', JSON.stringify(selectedTicket, null, 2));
-  const handleDeselect = deselection => {
-    const deselectedSeatInfo = extractSeatInfo(deselection);
-    const updatedSelectedTicket = selectedTicket.filter(
-      ticket => ticket.seat !== deselectedSeatInfo.seat,
-    );
-    setSelectedTicket(updatedSelectedTicket);
-  };
-
-  const findSelectedTicketType = (selectedCategory, selectedTicketType) => {
-    const categoryConfig = pricing.find(
-      category => category.category === selectedCategory,
-    );
-
-    if (categoryConfig && categoryConfig.ticketTypes) {
-      const selectedType = categoryConfig.ticketTypes.find(
-        type => type.ticketType === selectedTicketType,
-      );
-
-      if (selectedType) {
-        return selectedType.ticketType;
-      }
-    }
-
-    return null;
   };
 
   const extractSeatInfo = selection => {
@@ -70,15 +59,9 @@ const SimpleSeatingChartWithChangeConfig = () => {
     };
   };
 
-  // const handleCloseTicketDetails = () => {
-  //   setSelectedTicket([]);
-  // };
-
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={StyleSheet.absoluteFill}
-        contentContainerStyle={styles.scrollview}>
+      <ScrollView contentContainerStyle={styles.scrollview}>
         <Text style={styles.title}>Ticket Booking</Text>
         <View style={styles.chart}>
           <SeatsioSeatingChart
@@ -88,7 +71,6 @@ const SimpleSeatingChartWithChangeConfig = () => {
             onChartRendered={chart => (this.chart = chart)}
             pricing={pricing}
             onObjectSelected={handleTicketClick}
-            onObjectDeselected={handleDeselect}
           />
         </View>
       </ScrollView>
@@ -98,7 +80,8 @@ const SimpleSeatingChartWithChangeConfig = () => {
           ticket={selectedTicket}
           setSelectedTicket={setSelectedTicket}
           selectedTicket={selectedTicket}
-          handleDeselect={handleDeselect}
+          eventKey="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
+          Client={Client}
         />
       )}
     </View>

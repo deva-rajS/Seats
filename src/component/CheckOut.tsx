@@ -1,12 +1,14 @@
 import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
 import React, {useEffect, useState} from 'react';
+import RazorpayCheckout from 'react-native-razorpay';
 
 export default function CheckOut({
   ticket,
   onClose,
   setSelectedTicket,
   selectedTicket,
-  handleDeselect,
+  Client,
+  eventKey,
 }) {
   const [price, setPrice] = useState(0);
   useEffect(() => {
@@ -17,8 +19,27 @@ export default function CheckOut({
       return ticket.reduce((accumulator, item) => accumulator + item.price, 0);
     });
   }
+
+  async function createHoldToken() {
+    try {
+      const holdTokenResponse = await Client.holdTokens.create();
+      return holdTokenResponse.holdToken;
+    } catch (error) {
+      console.error('Error creating hold token:', error);
+      throw error;
+    }
+  }
+  async function holdSeats(holdToken, seats) {
+    try {
+      await Client.events.hold(eventKey, seats, holdToken);
+    } catch (error) {
+      console.error('Error holding seats:', error);
+      throw error;
+    }
+  }
   function consolidateLabels(ticket) {
     const consolidatedTicket = [];
+    // console.log(RazorpayCheckout);
 
     ticket.forEach(item => {
       const existingItemIndex = consolidatedTicket.findIndex(
@@ -44,19 +65,82 @@ export default function CheckOut({
 
     return consolidatedTicket;
   }
-  const handleCloseTicketDetails = index => {
-    const closedItemPrice = selectedTicket[index].price;
+  const handleCloseTicketDetails = async index => {
+    const closedItem = selectedTicket[index];
     const updatedTicket = [...selectedTicket];
+
+    this.chart
+      .findObject(closedItem.seat)
+      .then(seatObject => seatObject.deselect(closedItem.ticketType))
+      .then(() =>
+        console.log(
+          `Seat ${closedItem.seat} deselected for ${closedItem.ticketType}`,
+        ),
+      );
+
     updatedTicket.splice(index, 1);
     setSelectedTicket(updatedTicket);
-    setPrice(prevprice => prevprice - closedItemPrice);
-    console.log(
-      'ticketindex :',
-      JSON.stringify(selectedTicket[index], null, 2),
-    );
-    console.log(`closedItem: ${price - closedItemPrice}`);
-    // handleDeselect(selectedTicket[index]);
+    setPrice(prevprice => prevprice - closedItem.price);
+    // console.log('ticketindex :', JSON.stringify(ticket[index], null, 2));
   };
+
+  const handleCheckout = async () => {
+    try {
+      // Create a hold token
+      const holdToken = await createHoldToken();
+
+      // Perform holds using the created hold token
+      const consolidatedTicket = consolidateLabels(ticket);
+      for (const item of consolidatedTicket) {
+        await holdSeats(holdToken, [item.seat]);
+      }
+      const options = {
+        description: 'Credits towards consultation',
+        image: 'https://i.imgur.com/3g7nmJC.png',
+        currency: 'INR',
+        key: 'rzp_test_1DP5mmOlF5G5ag', // Your Razorpay API key
+        amount: price * 100, // Amount is in paisa (multiply by 100 for rupees)
+        name: 'Dev',
+        prefill: {
+          email: 'void@razorpay.com',
+          contact: '9191919191',
+          name: 'Razorpay Software',
+        },
+        theme: {color: '#F37254'},
+      };
+
+      RazorpayCheckout.open(options)
+        .then(data => {
+          // handle success
+          console.log(`Success: ${data.razorpay_payment_id}`);
+        })
+        .catch(error => {
+          // handle failure
+          console.error(`Error: ${error} | ${error.description}`);
+          if (
+            error &&
+            error.error &&
+            error.error.reason === 'payment_cancelled'
+          ) {
+            // Extract additional details from the error object
+            const {code, description, source, metadata} = error.error;
+
+            // Log information about the canceled payment
+            console.log(
+              `Payment canceled - Code: ${code}, Description: ${description}, Source: ${source}`,
+            );
+
+            // Release the hold token
+            console.log('Releasing hold token:', holdToken);
+            // Add logic to release the hold token using your client
+            // For example: client.holdTokens.release(holdToken);
+          }
+        });
+    } catch (error) {
+      console.error('Error during checkout:', error);
+    }
+  };
+
   const renderItem = ({item, index}) => (
     <View style={styles.categoryContainer}>
       <View style={styles.itemContainer}>
@@ -109,9 +193,7 @@ export default function CheckOut({
           <Text style={styles.totalText}>{price}</Text>
         </View>
       </View>
-      <TouchableOpacity
-        onPress={() => console.log('Checkout')}
-        style={styles.btnCheckout}>
+      <TouchableOpacity style={styles.btnCheckout} onPress={handleCheckout}>
         <Text style={styles.btnText}>Checkout</Text>
       </TouchableOpacity>
     </View>

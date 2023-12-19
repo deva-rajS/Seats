@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@seatsio/seatsio-react-native": "^4.5.0",
+    "@types/react-native-razorpay": "^2.2.4",
     "react": "18.2.0",
     "react-native": "0.73.0",
+    "react-native-razorpay": "^2.3.0",
     "react-native-webview": "^13.6.3"
   },
   "devDependencies": {
