@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import SeatsioSeatingChart from '@seatsio/seatsio-react-native';
+import firestore from '@react-native-firebase/firestore';
 import CheckOut from './CheckOut';
 
 const Client = {
@@ -24,23 +25,41 @@ const Client = {
 
 const SimpleSeatingChartWithChangeConfig = () => {
   const [selectedTicket, setSelectedTicket] = useState([]);
+  const [pricingData, setPricingData] = useState([]);
 
   const pricing = [
     {
       category: 1,
       ticketTypes: [
-        {ticketType: 'Adult', price: 10},
+        {ticketType: 'Adult', price: 100},
         // { ticketType: 'Senior/Child', price: 5 },
       ],
     },
     {
       category: 2,
       ticketTypes: [
-        {ticketType: 'Adult', price: 8},
+        {ticketType: 'Adult', price: 80},
         // { ticketType: 'Senior/Child', price: 3 },
       ],
     },
   ];
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const querySnapshot = await firestore().collection('Pricing').get();
+  //       const fetchedData = querySnapshot.docs.map(doc => ({
+  //         id: doc.id,
+  //         ...doc.data(),
+  //       }));
+  //       setData(fetchedData);
+  //       console.log(JSON.stringify(fetchedData));
+  //     } catch (error) {
+  //       console.error('Error fetching data from Firestore:', error);
+  //     }
+  //   };
+  //   fetchData();
+  // }, []);
 
   const handleTicketClick = selection => {
     const seatInfo = extractSeatInfo(selection);

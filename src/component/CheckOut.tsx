@@ -1,7 +1,8 @@
 import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
-
+import firestore from '@react-native-firebase/firestore';
+import Promo from './Promo';
 export default function CheckOut({
   ticket,
   onClose,
@@ -11,6 +12,29 @@ export default function CheckOut({
   eventKey,
 }) {
   const [price, setPrice] = useState(0);
+  const [data, setData] = useState([]);
+  const [promoCode, onChangePromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await firestore()
+          .collection('EventPromoCode')
+          .get();
+        const fetchedData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setData(fetchedData);
+      } catch (error) {
+        console.error('Error fetching data from Firestore:', error);
+      }
+    };
+
+    fetchData();
+    console.log(JSON.stringify(data));
+  }, []);
   useEffect(() => {
     TotalPrice();
   }, [ticket]);
@@ -47,12 +71,10 @@ export default function CheckOut({
       );
 
       if (existingItemIndex !== -1) {
-        // If the label already exists, update the existing item
         consolidatedTicket[existingItemIndex].seat += `, ${item.seat}`;
         consolidatedTicket[existingItemIndex].price += item.price;
         consolidatedTicket[existingItemIndex].count += 1;
       } else {
-        // Otherwise, add a new item to the consolidated array
         consolidatedTicket.push({
           label: item.label,
           seat: item.seat,
@@ -81,15 +103,11 @@ export default function CheckOut({
     updatedTicket.splice(index, 1);
     setSelectedTicket(updatedTicket);
     setPrice(prevprice => prevprice - closedItem.price);
-    // console.log('ticketindex :', JSON.stringify(ticket[index], null, 2));
   };
 
   const handleCheckout = async () => {
     try {
-      // Create a hold token
       const holdToken = await createHoldToken();
-
-      // Perform holds using the created hold token
       const consolidatedTicket = consolidateLabels(ticket);
       for (const item of consolidatedTicket) {
         await holdSeats(holdToken, [item.seat]);
@@ -98,8 +116,8 @@ export default function CheckOut({
         description: 'Credits towards consultation',
         image: 'https://i.imgur.com/3g7nmJC.png',
         currency: 'INR',
-        key: 'rzp_test_1DP5mmOlF5G5ag', // Your Razorpay API key
-        amount: price * 100, // Amount is in paisa (multiply by 100 for rupees)
+        key: 'rzp_test_1DP5mmOlF5G5ag',
+        amount: price * 100,
         name: 'Dev',
         prefill: {
           email: 'void@razorpay.com',
@@ -111,35 +129,42 @@ export default function CheckOut({
 
       RazorpayCheckout.open(options)
         .then(data => {
-          // handle success
           console.log(`Success: ${data.razorpay_payment_id}`);
         })
         .catch(error => {
-          // handle failure
           console.error(`Error: ${error} | ${error.description}`);
           if (
             error &&
             error.error &&
             error.error.reason === 'payment_cancelled'
           ) {
-            // Extract additional details from the error object
             const {code, description, source, metadata} = error.error;
-
-            // Log information about the canceled payment
             console.log(
               `Payment canceled - Code: ${code}, Description: ${description}, Source: ${source}`,
             );
-
-            // Release the hold token
             console.log('Releasing hold token:', holdToken);
-            // Add logic to release the hold token using your client
-            // For example: client.holdTokens.release(holdToken);
           }
         });
     } catch (error) {
       console.error('Error during checkout:', error);
     }
   };
+
+  function handleApply() {
+    data.map(item => {
+      if (!promoApplied) {
+        if (promoCode === item.code) {
+          if (item.discountType === 'actual') {
+            setPrice(prevPrice => prevPrice - item.discountValue);
+          }
+          if (item.discountType === 'percent') {
+            setPrice(prevPrice => prevPrice * (item.discountValue / 100));
+          }
+          setPromoApplied(true);
+        }
+      }
+    });
+  }
 
   const renderItem = ({item, index}) => (
     <View style={styles.categoryContainer}>
@@ -168,13 +193,17 @@ export default function CheckOut({
 
   return (
     <View style={styles.container}>
+      <Promo
+        onChangePromoCode={onChangePromoCode}
+        promoCode={promoCode}
+        handleApply={handleApply}
+      />
       <FlatList
         scrollEnabled
         data={consolidateLabels(ticket)}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
       />
-      {/* <Button title="Close" onPress={onClose} /> */}
       <View style={styles.subConatiner}>
         <View style={styles.itemContainerHorizontal}>
           <Text style={styles.textBold}>{ticket.length} Seat</Text>
@@ -234,7 +263,7 @@ const styles = StyleSheet.create({
     rowGap: 5,
   },
   btnCheckout: {
-    backgroundColor: 'violet',
+    backgroundColor: 'darkviolet',
     borderRadius: 5,
     marginTop: 10,
     padding: 10,
@@ -242,6 +271,7 @@ const styles = StyleSheet.create({
   btnText: {
     textAlign: 'center',
     color: 'white',
+    fontSize: 16,
     fontWeight: '500',
   },
   text: {

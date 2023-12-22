@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "481080137238",
+    "project_id": "audioapp-1eb02",
+    "storage_bucket": "audioapp-1eb02.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:481080137238:android:1f76a6b97b835ff4b0c737",
+        "android_client_info": {
+          "package_name": "com.firebasedemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJIPLt6591uhATgScJqLwJXrY0CeRxsz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:481080137238:android:773d5cc181ef0c1cb0c737",
+        "android_client_info": {
+          "package_name": "com.seats"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJIPLt6591uhATgScJqLwJXrY0CeRxsz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
