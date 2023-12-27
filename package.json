@@ -10,13 +10,22 @@
     "test": "jest"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.1",
+    "@fortawesome/free-brands-svg-icons": "^6.5.1",
+    "@fortawesome/free-regular-svg-icons": "^6.5.1",
+    "@fortawesome/free-solid-svg-icons": "^6.5.1",
+    "@fortawesome/react-native-fontawesome": "^0.3.0",
     "@react-native-firebase/app": "^18.7.3",
     "@react-native-firebase/firestore": "^18.7.3",
     "@seatsio/seatsio-react-native": "^4.5.0",
     "@types/react-native-razorpay": "^2.2.4",
+    "express": "^4.18.2",
+    "razorpay": "^2.9.2",
     "react": "18.2.0",
     "react-native": "0.73.0",
     "react-native-razorpay": "^2.3.0",
+    "react-native-svg": "^14.1.0",
+    "react-native-vector-icons": "^10.0.3",
     "react-native-webview": "^13.6.3"
   },
   "devDependencies": {
@@ -28,6 +37,7 @@
     "@react-native/metro-config": "^0.73.2",
     "@react-native/typescript-config": "^0.73.1",
     "@types/react": "^18.2.6",
+    "@types/react-native-vector-icons": "^6.4.18",
     "@types/react-test-renderer": "^18.0.0",
     "babel-jest": "^29.6.3",
     "eslint": "^8.19.0",

@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
 import firestore from '@react-native-firebase/firestore';
 import Promo from './Promo';
+import Terms from './Terms';
 export default function CheckOut({
   ticket,
   onClose,
@@ -10,6 +11,10 @@ export default function CheckOut({
   selectedTicket,
   Client,
   eventKey,
+  showTermsModalHandler,
+  submit,
+  setSubmit,
+  hideTermsModalHandler,
 }) {
   const [price, setPrice] = useState(0);
   const [data, setData] = useState([]);
@@ -124,7 +129,7 @@ export default function CheckOut({
           contact: '9191919191',
           name: 'Razorpay Software',
         },
-        theme: {color: '#F37254'},
+        theme: {color: '#B961C7'},
       };
 
       RazorpayCheckout.open(options)
@@ -222,9 +227,19 @@ export default function CheckOut({
           <Text style={styles.totalText}>{price}</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.btnCheckout} onPress={handleCheckout}>
+      <TouchableOpacity
+        style={styles.btnCheckout}
+        onPress={() => {
+          if (submit) {
+            hideTermsModalHandler();
+            handleCheckout();
+          } else {
+            showTermsModalHandler();
+          }
+        }}>
         <Text style={styles.btnText}>Checkout</Text>
       </TouchableOpacity>
+      {/* <Terms /> */}
     </View>
   );
 }

@@ -1,20 +1,23 @@
 import {
   View,
   Text,
-  Linking,
   TextInput,
-  ViewBase,
   TouchableHighlight,
   StyleSheet,
-  Touchable,
 } from 'react-native';
 import React, {useState} from 'react';
-
-export default function Promo({promoCode, onChangePromoCode, handleApply}) {
+interface PromoProps {
+  promoCode: string;
+  onChangePromoCode: (text: string) => void;
+  handleApply: () => void;
+}
+const Promo: React.FC<PromoProps> = ({
+  promoCode,
+  onChangePromoCode,
+  handleApply,
+}) => {
   const [togglePromo, setTogglePromo] = useState(true);
-  function Apply() {
-    console.log(`promoCode : ${promoCode}`);
-  }
+
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
@@ -51,7 +54,8 @@ export default function Promo({promoCode, onChangePromoCode, handleApply}) {
       )}
     </View>
   );
-}
+};
+export default Promo;
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 8,
