@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {FlatList, ScrollView, StyleSheet, Text, View} from 'react-native';
 import SeatsioSeatingChart from '@seatsio/seatsio-react-native';
 import firestore from '@react-native-firebase/firestore';
 import CheckOut from './CheckOut';
@@ -100,7 +100,7 @@ const SimpleSeatingChartWithChangeConfig = () => {
 
     const selectedCategory = selection.sectionCategory;
   };
-
+  // console.log('Selected chart:', this.chart.data);
   const extractSeatInfo = (selection: ChartSelection): SeatInfo => {
     const {category, seatId} = selection;
     return {
@@ -121,33 +121,40 @@ const SimpleSeatingChartWithChangeConfig = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollview}>
-        <Text style={styles.title}>Ticket Booking</Text>
-        <View style={styles.chart}>
-          <SeatsioSeatingChart
-            region="eu"
-            workspaceKey="38e8358c-1de3-44f8-95fa-497f582e9036"
-            event="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
-            onChartRendered={chart => (this.chart = chart)}
-            pricing={pricing}
-            onObjectSelected={handleTicketClick}
-          />
-        </View>
-      </ScrollView>
+      <FlatList
+        data={'1'}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({item}) => (
+          <View style={styles.scrollview}>
+            <Text style={styles.title}>Ticket Booking</Text>
+            <View style={styles.chart}>
+              <SeatsioSeatingChart
+                region="eu"
+                workspaceKey="38e8358c-1de3-44f8-95fa-497f582e9036"
+                event="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
+                onChartRendered={chart => (this.chart = chart)}
+                pricing={pricing}
+                onObjectSelected={handleTicketClick}
+              />
+            </View>
 
-      {selectedTicket.length > 0 && (
-        <CheckOut
-          ticket={selectedTicket}
-          setSelectedTicket={setSelectedTicket}
-          selectedTicket={selectedTicket}
-          eventKey="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
-          Client={Client}
-          showTermsModalHandler={showTermsModalHandler}
-          hideTermsModalHandler={hideTermsModalHandler}
-          submit={submit}
-          setSubmit={setSubmit}
-        />
-      )}
+            <View style={styles.CheckOut}>
+              <CheckOut
+                ticket={selectedTicket}
+                setSelectedTicket={setSelectedTicket}
+                selectedTicket={selectedTicket}
+                eventKey="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
+                Client={Client}
+                showTermsModalHandler={showTermsModalHandler}
+                hideTermsModalHandler={hideTermsModalHandler}
+                submit={submit}
+                setSubmit={setSubmit}
+              />
+            </View>
+          </View>
+        )}
+      />
+
       {showTermsModal && (
         <View style={styles.termsModal}>
           <Terms
@@ -163,17 +170,22 @@ const SimpleSeatingChartWithChangeConfig = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
   scrollview: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 10,
   },
   chart: {
     flex: 1,
     width: '100%',
     height: 400,
+  },
+  CheckOut: {
+    flex: 1,
+    width: '100%',
+    marginTop: 30,
   },
   title: {
     fontSize: 24,

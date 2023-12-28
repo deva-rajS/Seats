@@ -5,7 +5,12 @@ import {
   TouchableHighlight,
   StyleSheet,
 } from 'react-native';
-import React, {useState} from 'react';
+import {useEffect, useState} from 'react';
+import {library} from '@fortawesome/fontawesome-svg-core';
+import {faCircleQuestion} from '@fortawesome/free-solid-svg-icons';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+library.add(faCircleQuestion);
+
 interface PromoProps {
   promoCode: string;
   onChangePromoCode: (text: string) => void;
@@ -17,6 +22,27 @@ const Promo: React.FC<PromoProps> = ({
   handleApply,
 }) => {
   const [togglePromo, setTogglePromo] = useState(true);
+  const [minutes, setMinutes] = useState(15);
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval;
+
+    if (minutes > 0 || seconds > 0) {
+      interval = setInterval(() => {
+        if (seconds === 0) {
+          setMinutes(prevMinutes => prevMinutes - 1);
+          setSeconds(59);
+        } else {
+          setSeconds(prevSeconds => prevSeconds - 1);
+        }
+      }, 1000);
+    }
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [minutes, seconds]);
 
   return (
     <View style={styles.container}>
@@ -52,6 +78,19 @@ const Promo: React.FC<PromoProps> = ({
           </View>
         </View>
       )}
+      <View style={styles.timerContainer}>
+        <Text style={styles.textBold}>Tickets</Text>
+        <View style={styles.timer}>
+          <Text style={styles.textBold}>
+            {`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+              2,
+              '0',
+            )}`}
+            &nbsp;
+            <FontAwesomeIcon icon={faCircleQuestion} color={'black'} />
+          </Text>
+        </View>
+      </View>
     </View>
   );
 };
@@ -106,5 +145,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginBottom: 10,
     borderRadius: 5,
+  },
+  timerContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
   },
 });

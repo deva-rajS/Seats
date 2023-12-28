@@ -3,7 +3,6 @@ import React, {useEffect, useState} from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
 import firestore from '@react-native-firebase/firestore';
 import Promo from './Promo';
-import Terms from './Terms';
 export default function CheckOut({
   ticket,
   onClose,
@@ -170,8 +169,28 @@ export default function CheckOut({
       }
     });
   }
-
+  console.log(selectedTicket);
   const renderItem = ({item, index}) => (
+    <View style={styles.categoryContainer}>
+      <View style={styles.itemContainer}>
+        <Text style={styles.textBold}>Orchestra</Text>
+        <Text style={styles.textBold}>₹80 - ₹100</Text>
+      </View>
+      <View style={styles.itemContainer}>
+        <Text style={styles.text}>Adult</Text>
+        <Text style={styles.text}>80</Text>
+      </View>
+      <View style={styles.itemContainer}>
+        <Text style={styles.text}>Processing Fee</Text>
+        <Text style={styles.text}>5</Text>
+      </View>
+      <View style={styles.itemContainer}>
+        <Text style={styles.text}>Upsc Cost</Text>
+        <Text style={styles.text}>3</Text>
+      </View>
+    </View>
+  );
+  const renderSelectedItem = ({item, index}) => (
     <View style={styles.categoryContainer}>
       <View style={styles.itemContainer}>
         <Text style={styles.textBold}>{item.label}</Text>
@@ -198,47 +217,54 @@ export default function CheckOut({
 
   return (
     <View style={styles.container}>
-      <Promo
-        onChangePromoCode={onChangePromoCode}
-        promoCode={promoCode}
-        handleApply={handleApply}
-      />
+      <View style={styles.promo}>
+        <Promo
+          onChangePromoCode={onChangePromoCode}
+          promoCode={promoCode}
+          handleApply={handleApply}
+        />
+      </View>
       <FlatList
         scrollEnabled
-        data={consolidateLabels(ticket)}
-        renderItem={renderItem}
+        data={selectedTicket.length > 0 ? consolidateLabels(ticket) : '1'}
+        renderItem={selectedTicket.length > 0 ? renderSelectedItem : renderItem}
         keyExtractor={(item, index) => index.toString()}
+        style={styles.flatList}
       />
-      <View style={styles.subConatiner}>
-        <View style={styles.itemContainerHorizontal}>
-          <Text style={styles.textBold}>{ticket.length} Seat</Text>
-          <Text style={styles.textBold}>{price}</Text>
-        </View>
-        <View style={styles.itemContainerHorizontal}>
-          <Text style={styles.text}>Processing Fee</Text>
-          <Text style={styles.text}>3</Text>
-        </View>
-        <View style={styles.itemContainerHorizontal}>
-          <Text style={styles.text}>Upsc Cost</Text>
-          <Text style={styles.text}>1</Text>
-        </View>
-        <View style={styles.itemContainerHorizontal}>
-          <Text style={styles.totalText}>Total</Text>
-          <Text style={styles.totalText}>{price}</Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.btnCheckout}
-        onPress={() => {
-          if (submit) {
-            hideTermsModalHandler();
-            handleCheckout();
-          } else {
-            showTermsModalHandler();
-          }
-        }}>
-        <Text style={styles.btnText}>Checkout</Text>
-      </TouchableOpacity>
+      {selectedTicket.length > 0 && (
+        <>
+          <View style={styles.subConatiner}>
+            <View style={styles.itemContainerHorizontal}>
+              <Text style={styles.textBold}>{ticket.length} Seat</Text>
+              <Text style={styles.textBold}>{price}</Text>
+            </View>
+            <View style={styles.itemContainerHorizontal}>
+              <Text style={styles.text}>Processing Fee</Text>
+              <Text style={styles.text}>3</Text>
+            </View>
+            <View style={styles.itemContainerHorizontal}>
+              <Text style={styles.text}>Upsc Cost</Text>
+              <Text style={styles.text}>1</Text>
+            </View>
+            <View style={styles.itemContainerHorizontal}>
+              <Text style={styles.totalText}>Total</Text>
+              <Text style={styles.totalText}>{price}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.btnCheckout}
+            onPress={() => {
+              if (submit) {
+                hideTermsModalHandler();
+                handleCheckout();
+              } else {
+                showTermsModalHandler();
+              }
+            }}>
+            <Text style={styles.btnText}>Checkout</Text>
+          </TouchableOpacity>
+        </>
+      )}
       {/* <Terms /> */}
     </View>
   );
@@ -246,21 +272,28 @@ export default function CheckOut({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'lightgray',
-    marginHorizontal: 10,
-    marginBottom: 10,
+    // flex: 1,
+    backgroundColor: 'white',
     paddingTop: 15,
     borderRadius: 5,
     columnGap: 5,
     rowGap: 5,
   },
   categoryContainer: {
-    marginBottom: 10,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'white',
+    // borderColor: 'red',
+    // borderWidth: 1,
+  },
+  flatList: {
+    backgroundColor: '#E3E3E3',
   },
   subConatiner: {
+    backgroundColor: 'lightgray',
     rowGap: 5,
+    paddingVertical: 10,
+    // marginBottom: 10,
   },
   itemContainer: {
     flexDirection: 'row',
@@ -278,6 +311,7 @@ const styles = StyleSheet.create({
     rowGap: 5,
   },
   btnCheckout: {
+    marginHorizontal: 10,
     backgroundColor: 'darkviolet',
     borderRadius: 5,
     marginTop: 10,
@@ -302,5 +336,8 @@ const styles = StyleSheet.create({
     color: 'red',
     fontWeight: '500',
     fontSize: 18,
+  },
+  promo: {
+    marginHorizontal: 10,
   },
 });
