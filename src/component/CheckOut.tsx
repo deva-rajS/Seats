@@ -3,9 +3,23 @@ import React, {useEffect, useState} from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
 import firestore from '@react-native-firebase/firestore';
 import Promo from './Promo';
-export default function CheckOut({
+
+interface CheckOutProps {
+  ticket: any[];
+  onClose: () => void;
+  setSelectedTicket: (selectedTicket: any[]) => void;
+  selectedTicket: any[];
+  Client: any;
+  eventKey: string;
+  showTermsModalHandler: () => void;
+  submit: boolean;
+  setSubmit: (submit: boolean) => void;
+  hideTermsModalHandler: () => void;
+  chartRef: any;
+}
+
+const CheckOut: React.FC<CheckOutProps> = ({
   ticket,
-  onClose,
   setSelectedTicket,
   selectedTicket,
   Client,
@@ -13,12 +27,12 @@ export default function CheckOut({
   showTermsModalHandler,
   submit,
   setSubmit,
-  hideTermsModalHandler,
-}) {
-  const [price, setPrice] = useState(0);
-  const [data, setData] = useState([]);
-  const [promoCode, onChangePromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
+  chartRef,
+}) => {
+  const [price, setPrice] = useState<number>(0);
+  const [data, setData] = useState<any[]>([]);
+  const [promoCode, onChangePromoCode] = useState<string>('');
+  const [promoApplied, setPromoApplied] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,11 +51,13 @@ export default function CheckOut({
     };
 
     fetchData();
-    console.log(JSON.stringify(data));
   }, []);
   useEffect(() => {
     TotalPrice();
   }, [ticket]);
+  useEffect(() => {
+    submit && handleCheckout();
+  }, [submit]);
   function TotalPrice() {
     setPrice(prevPrice => {
       return ticket.reduce((accumulator, item) => accumulator + item.price, 0);
@@ -57,7 +73,7 @@ export default function CheckOut({
       throw error;
     }
   }
-  async function holdSeats(holdToken, seats) {
+  async function holdSeats(holdToken: string, seats: string) {
     try {
       await Client.events.hold(eventKey, seats, holdToken);
     } catch (error) {
@@ -65,8 +81,8 @@ export default function CheckOut({
       throw error;
     }
   }
-  function consolidateLabels(ticket) {
-    const consolidatedTicket = [];
+  function consolidateLabels(ticket: any[]) {
+    const consolidatedTicket: any[] = [];
     // console.log(RazorpayCheckout);
 
     ticket.forEach(item => {
@@ -77,25 +93,32 @@ export default function CheckOut({
       if (existingItemIndex !== -1) {
         consolidatedTicket[existingItemIndex].seat += `, ${item.seat}`;
         consolidatedTicket[existingItemIndex].price += item.price;
-        consolidatedTicket[existingItemIndex].count += 1;
+        consolidatedTicket[existingItemIndex].ticketType.add(item.ticketType);
+        if (item.ticketType === 'Senior/Child') {
+          consolidatedTicket[existingItemIndex].SnCCount += 1;
+        }
+        if (item.ticketType === 'Adult') {
+          consolidatedTicket[existingItemIndex].AdultCount += 1;
+        }
       } else {
         consolidatedTicket.push({
           label: item.label,
           seat: item.seat,
-          ticketType: item.ticketType,
+          ticketType: new Set([item.ticketType]),
           price: item.price,
-          count: 1,
+          AdultCount: item.ticketType === 'Adult' && 1,
+          SnCCount: item.ticketType === 'Senior/Child' && 1,
         });
       }
     });
 
     return consolidatedTicket;
   }
-  const handleCloseTicketDetails = async index => {
+  const handleCloseTicketDetails = async (index: number) => {
     const closedItem = selectedTicket[index];
     const updatedTicket = [...selectedTicket];
 
-    this.chart
+    chartRef.current
       .findObject(closedItem.seat)
       .then(seatObject => seatObject.deselect(closedItem.ticketType))
       .then(() =>
@@ -152,6 +175,7 @@ export default function CheckOut({
     } catch (error) {
       console.error('Error during checkout:', error);
     }
+    setSubmit(false);
   };
 
   function handleApply() {
@@ -169,7 +193,6 @@ export default function CheckOut({
       }
     });
   }
-  console.log(selectedTicket);
   const renderItem = ({item, index}) => (
     <View style={styles.categoryContainer}>
       <View style={styles.itemContainer}>
@@ -199,9 +222,15 @@ export default function CheckOut({
         </TouchableOpacity>
       </View>
       <View style={styles.itemContainer}>
-        <Text style={styles.text}>
-          {item.count} x {item.ticketType}
-        </Text>
+        <View style={styles.ticketTypesContainer}>
+          {Array.from(item.ticketType).map((val, index) => (
+            <Text key={index} style={styles.text}>
+              {val === 'Senior/Child'
+                ? `${item.SnCCount} x ${val}`
+                : `${item.AdultCount} x ${val}`}
+            </Text>
+          ))}
+        </View>
         <Text style={styles.text}>{item.price}</Text>
       </View>
       <View style={styles.itemContainer}>
@@ -253,14 +282,7 @@ export default function CheckOut({
           </View>
           <TouchableOpacity
             style={styles.btnCheckout}
-            onPress={() => {
-              if (submit) {
-                hideTermsModalHandler();
-                handleCheckout();
-              } else {
-                showTermsModalHandler();
-              }
-            }}>
+            onPress={() => showTermsModalHandler()}>
             <Text style={styles.btnText}>Checkout</Text>
           </TouchableOpacity>
         </>
@@ -268,8 +290,8 @@ export default function CheckOut({
       {/* <Terms /> */}
     </View>
   );
-}
-
+};
+export default CheckOut;
 const styles = StyleSheet.create({
   container: {
     // flex: 1,
@@ -339,5 +361,8 @@ const styles = StyleSheet.create({
   },
   promo: {
     marginHorizontal: 10,
+  },
+  ticketTypesContainer: {
+    flexDirection: 'column',
   },
 });

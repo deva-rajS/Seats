@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {FlatList, ScrollView, StyleSheet, Text, View} from 'react-native';
 import SeatsioSeatingChart from '@seatsio/seatsio-react-native';
 import firestore from '@react-native-firebase/firestore';
@@ -20,7 +20,7 @@ interface ChartSelection {
       ticketTypes: {
         ticketType: string;
         price: string;
-      }[];
+      };
     };
   };
   seatId: string;
@@ -38,13 +38,11 @@ interface ChartSelection {
 const Client = {
   holdTokens: {
     create: async () => {
-      // Simulate creating a hold token
       return {holdToken: 'mockHoldToken'};
     },
   },
   events: {
     hold: async (eventKey: string, seats: string[], holdToken: string) => {
-      // Simulate holding seats
       console.log(
         `Holding seats ${seats.join(
           ', ',
@@ -59,6 +57,7 @@ const SimpleSeatingChartWithChangeConfig = () => {
   const [pricingData, setPricingData] = useState([]);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [submit, setSubmit] = useState(false);
+  const chartRef = useRef(null);
 
   const pricing = [
     {
@@ -77,37 +76,52 @@ const SimpleSeatingChartWithChangeConfig = () => {
     },
   ];
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const querySnapshot = await firestore().collection('Pricing').get();
-  //       const fetchedData = querySnapshot.docs.map(doc => ({
-  //         id: doc.id,
-  //         ...doc.data(),
-  //       }));
-  //       setData(fetchedData);
-  //       console.log(JSON.stringify(fetchedData));
-  //     } catch (error) {
-  //       console.error('Error fetching data from Firestore:', error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await firestore().collection('Pricing').get();
+        const fetchedData = querySnapshot.docs.map(doc => ({
+          ...doc.data(),
+        }));
+        const newPricingData = fetchedData.reduce(
+          (accumulator, {pricing, ...rest}) => {
+            const flattenedPricing = pricing.map(
+              ({ticketTypes, ...categoryRest}) => ({
+                ...rest,
+                ...categoryRest,
+                ticketTypes: ticketTypes.map(({...ticketTypeRest}) => ({
+                  ...ticketTypeRest,
+                })),
+              }),
+            );
 
-  const handleTicketClick = (selection: ChartSelection) => {
-    const seatInfo = extractSeatInfo(selection);
+            return [...accumulator, ...flattenedPricing];
+          },
+          [],
+        );
+        setPricingData(newPricingData);
+      } catch (error) {
+        console.error('Error fetching data from Firestore:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleTicketClick = (selection: ChartSelection, index: any) => {
+    const seatInfo = extractSeatInfo(selection, index);
     setSelectedTicket([...selectedTicket, seatInfo]);
-
-    const selectedCategory = selection.sectionCategory;
   };
-  // console.log('Selected chart:', this.chart.data);
-  const extractSeatInfo = (selection: ChartSelection): SeatInfo => {
+  const extractSeatInfo = (
+    selection: ChartSelection,
+    index: number,
+  ): SeatInfo => {
     const {category, seatId} = selection;
     return {
       label: category.label || '',
       seat: seatId,
-      ticketType: category.pricing.ticketTypes[0].ticketType || '',
-      price: category.pricing.ticketTypes[0].price || '',
+      ticketType: index.ticketType || '',
+      price: index.price || '',
     };
   };
 
@@ -132,9 +146,12 @@ const SimpleSeatingChartWithChangeConfig = () => {
                 region="eu"
                 workspaceKey="38e8358c-1de3-44f8-95fa-497f582e9036"
                 event="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
-                onChartRendered={chart => (this.chart = chart)}
-                pricing={pricing}
+                onChartRendered={chart => (chartRef.current = chart)}
+                pricing={pricingData}
                 onObjectSelected={handleTicketClick}
+                priceFormatter={function (price) {
+                  return '₹' + price;
+                }}
               />
             </View>
 
@@ -149,6 +166,7 @@ const SimpleSeatingChartWithChangeConfig = () => {
                 hideTermsModalHandler={hideTermsModalHandler}
                 submit={submit}
                 setSubmit={setSubmit}
+                chartRef={chartRef}
               />
             </View>
           </View>
@@ -193,7 +211,6 @@ const styles = StyleSheet.create({
   },
   termsModal: {
     flex: 1,
-    // height: '100%',
     position: 'absolute',
     top: 0,
     bottom: 0,
