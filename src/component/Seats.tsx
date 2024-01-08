@@ -1,9 +1,10 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {FlatList, ScrollView, StyleSheet, Text, View} from 'react-native';
+import React, {useContext} from 'react';
+import {FlatList, StyleSheet, Text, View} from 'react-native';
 import SeatsioSeatingChart from '@seatsio/seatsio-react-native';
-import firestore from '@react-native-firebase/firestore';
+import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
 import CheckOut from './CheckOut';
 import Terms from './Terms';
+import EventHeader from './EventHeader';
 
 interface SeatInfo {
   label: string;
@@ -35,102 +36,39 @@ interface ChartSelection {
   };
 }
 
-const Client = {
-  holdTokens: {
-    create: async () => {
-      return {holdToken: 'mockHoldToken'};
-    },
-  },
-  events: {
-    hold: async (eventKey: string, seats: string[], holdToken: string) => {
-      console.log(
-        `Holding seats ${seats.join(
-          ', ',
-        )} for event ${eventKey} with hold token ${holdToken}`,
-      );
-    },
-  },
-};
-
-const SimpleSeatingChartWithChangeConfig = () => {
-  const [selectedTicket, setSelectedTicket] = useState([]);
-  const [pricingData, setPricingData] = useState([]);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [submit, setSubmit] = useState(false);
-  const chartRef = useRef(null);
-
-  const pricing = [
-    {
-      category: 1,
-      ticketTypes: [
-        {ticketType: 'Adult', price: 100},
-        // { ticketType: 'Senior/Child', price: 5 },
-      ],
-    },
-    {
-      category: 2,
-      ticketTypes: [
-        {ticketType: 'Adult', price: 80},
-        // { ticketType: 'Senior/Child', price: 3 },
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const querySnapshot = await firestore().collection('Pricing').get();
-        const fetchedData = querySnapshot.docs.map(doc => ({
-          ...doc.data(),
-        }));
-        const newPricingData = fetchedData.reduce(
-          (accumulator, {pricing, ...rest}) => {
-            const flattenedPricing = pricing.map(
-              ({ticketTypes, ...categoryRest}) => ({
-                ...rest,
-                ...categoryRest,
-                ticketTypes: ticketTypes.map(({...ticketTypeRest}) => ({
-                  ...ticketTypeRest,
-                })),
-              }),
-            );
-
-            return [...accumulator, ...flattenedPricing];
-          },
-          [],
-        );
-        setPricingData(newPricingData);
-      } catch (error) {
-        console.error('Error fetching data from Firestore:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
+const SimpleSeatingChartWithChangeConfig: React.FC = () => {
+  const {
+    eventKey,
+    selectedTicket,
+    setSelectedTicket,
+    pricingData,
+    showTermsModal,
+    chartRef,
+  } = useContext<SeatingContextProps>(SeatingContext);
 
   const handleTicketClick = (selection: ChartSelection, index: any) => {
     const seatInfo = extractSeatInfo(selection, index);
     setSelectedTicket([...selectedTicket, seatInfo]);
+    chartRef.current
+      .getReportBySelectability()
+      .then(categories => console.log('categories :', categories.selectable));
+    console.log('chartRef :', chartRef.current);
   };
+
   const extractSeatInfo = (
     selection: ChartSelection,
     index: number,
   ): SeatInfo => {
     const {category, seatId} = selection;
+    // console.log('Selection :', selection);
     return {
       label: category.label || '',
       seat: seatId,
-      ticketType: index.ticketType || '',
-      price: index.price || '',
+      ticketType: (category.pricing.ticketTypes && index.ticketType) || '',
+      price: category.pricing.ticketTypes
+        ? index.price
+        : category.pricing.price || '',
     };
-  };
-
-  const showTermsModalHandler = () => {
-    setShowTermsModal(true);
-  };
-
-  const hideTermsModalHandler = () => {
-    setShowTermsModal(false);
   };
 
   return (
@@ -140,34 +78,20 @@ const SimpleSeatingChartWithChangeConfig = () => {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({item}) => (
           <View style={styles.scrollview}>
-            <Text style={styles.title}>Ticket Booking</Text>
+            <EventHeader />
             <View style={styles.chart}>
               <SeatsioSeatingChart
                 region="eu"
                 workspaceKey="38e8358c-1de3-44f8-95fa-497f582e9036"
-                event="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
+                event={eventKey}
                 onChartRendered={chart => (chartRef.current = chart)}
                 pricing={pricingData}
                 onObjectSelected={handleTicketClick}
-                priceFormatter={function (price) {
-                  return '₹' + price;
-                }}
+                priceFormatter={price => '₹' + price}
               />
             </View>
-
             <View style={styles.CheckOut}>
-              <CheckOut
-                ticket={selectedTicket}
-                setSelectedTicket={setSelectedTicket}
-                selectedTicket={selectedTicket}
-                eventKey="85607055-4e5e-41c9-9c2a-5328d3cc0c25"
-                Client={Client}
-                showTermsModalHandler={showTermsModalHandler}
-                hideTermsModalHandler={hideTermsModalHandler}
-                submit={submit}
-                setSubmit={setSubmit}
-                chartRef={chartRef}
-              />
+              <CheckOut />
             </View>
           </View>
         )}
@@ -175,10 +99,7 @@ const SimpleSeatingChartWithChangeConfig = () => {
 
       {showTermsModal && (
         <View style={styles.termsModal}>
-          <Terms
-            setSubmit={setSubmit}
-            hideTermsModalHandler={hideTermsModalHandler}
-          />
+          <Terms />
         </View>
       )}
     </View>
@@ -214,11 +135,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    left: 0,
     right: 0,
+    left: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
   },
 });
 

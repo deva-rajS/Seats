@@ -4,23 +4,26 @@ import {
   TextInput,
   TouchableHighlight,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import {useEffect, useState} from 'react';
+import {useContext, useEffect, useState} from 'react';
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {faCircleQuestion} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
 library.add(faCircleQuestion);
 
-interface PromoProps {
-  promoCode: string;
-  onChangePromoCode: (text: string) => void;
-  handleApply: () => void;
-}
-const Promo: React.FC<PromoProps> = ({
-  promoCode,
-  onChangePromoCode,
-  handleApply,
-}) => {
+const Promo: React.FC = () => {
+  const {
+    selectedTicket,
+    data,
+    setPrice,
+    promoCode,
+    onChangePromoCode,
+    promoApplied,
+    setPromoApplied,
+  } = useContext<SeatingContextProps>(SeatingContext);
+
   const [togglePromo, setTogglePromo] = useState(true);
   const [minutes, setMinutes] = useState(15);
   const [seconds, setSeconds] = useState(0);
@@ -43,6 +46,29 @@ const Promo: React.FC<PromoProps> = ({
       clearInterval(interval);
     };
   }, [minutes, seconds]);
+  useEffect(() => {
+    selectedTicket.length < 1 && setPromoApplied(false);
+  }, [selectedTicket]);
+
+  function handleApply() {
+    data.map(item => {
+      if (!promoApplied) {
+        if (promoCode === item.code) {
+          if (item.discountType === 'actual') {
+            setPrice(prevPrice => prevPrice - item.discountValue);
+          }
+          if (item.discountType === 'percent') {
+            setPrice(
+              prevPrice => prevPrice - prevPrice * (item.discountValue / 100),
+            );
+          }
+          setPromoApplied(true);
+          onChangePromoCode('');
+          Alert.alert('Promo Applied', 'Promo applied successfully');
+        }
+      }
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -72,7 +98,9 @@ const Promo: React.FC<PromoProps> = ({
             </TouchableHighlight>
             <TouchableHighlight
               style={[styles.button, styles.buttonCancel]}
-              onPress={() => setTogglePromo(true)}>
+              onPress={() => {
+                setTogglePromo(true), promoCode && onChangePromoCode('');
+              }}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableHighlight>
           </View>

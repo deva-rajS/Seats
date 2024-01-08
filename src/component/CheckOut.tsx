@@ -1,38 +1,26 @@
 import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
 import firestore from '@react-native-firebase/firestore';
 import Promo from './Promo';
+import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
 
-interface CheckOutProps {
-  ticket: any[];
-  onClose: () => void;
-  setSelectedTicket: (selectedTicket: any[]) => void;
-  selectedTicket: any[];
-  Client: any;
-  eventKey: string;
-  showTermsModalHandler: () => void;
-  submit: boolean;
-  setSubmit: (submit: boolean) => void;
-  hideTermsModalHandler: () => void;
-  chartRef: any;
-}
-
-const CheckOut: React.FC<CheckOutProps> = ({
-  ticket,
-  setSelectedTicket,
-  selectedTicket,
-  Client,
-  eventKey,
-  showTermsModalHandler,
-  submit,
-  setSubmit,
-  chartRef,
-}) => {
-  const [price, setPrice] = useState<number>(0);
-  const [data, setData] = useState<any[]>([]);
-  const [promoCode, onChangePromoCode] = useState<string>('');
-  const [promoApplied, setPromoApplied] = useState<boolean>(false);
+const CheckOut: React.FC = () => {
+  const {
+    eventKey,
+    selectedTicket,
+    setSelectedTicket,
+    showTermsModalHandler,
+    submit,
+    setSubmit,
+    chartRef,
+    Client,
+    price,
+    setPrice,
+    setData,
+    seatsCount,
+    setSeatsCount,
+  } = useContext<SeatingContextProps>(SeatingContext);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,18 +40,23 @@ const CheckOut: React.FC<CheckOutProps> = ({
 
     fetchData();
   }, []);
+
   useEffect(() => {
     TotalPrice();
-  }, [ticket]);
+  }, [selectedTicket]);
+
   useEffect(() => {
     submit && handleCheckout();
   }, [submit]);
+
   function TotalPrice() {
     setPrice(prevPrice => {
-      return ticket.reduce((accumulator, item) => accumulator + item.price, 0);
+      return selectedTicket.reduce(
+        (accumulator, item) => accumulator + item.price,
+        0,
+      );
     });
   }
-
   async function createHoldToken() {
     try {
       const holdTokenResponse = await Client.holdTokens.create();
@@ -83,7 +76,6 @@ const CheckOut: React.FC<CheckOutProps> = ({
   }
   function consolidateLabels(ticket: any[]) {
     const consolidatedTicket: any[] = [];
-    // console.log(RazorpayCheckout);
 
     ticket.forEach(item => {
       const existingItemIndex = consolidatedTicket.findIndex(
@@ -93,7 +85,9 @@ const CheckOut: React.FC<CheckOutProps> = ({
       if (existingItemIndex !== -1) {
         consolidatedTicket[existingItemIndex].seat += `, ${item.seat}`;
         consolidatedTicket[existingItemIndex].price += item.price;
-        consolidatedTicket[existingItemIndex].ticketType.add(item.ticketType);
+        consolidatedTicket[existingItemIndex].count += 1;
+        item.ticketType &&
+          consolidatedTicket[existingItemIndex].ticketType.add(item.ticketType);
         if (item.ticketType === 'Senior/Child') {
           consolidatedTicket[existingItemIndex].SnCCount += 1;
         }
@@ -104,16 +98,19 @@ const CheckOut: React.FC<CheckOutProps> = ({
         consolidatedTicket.push({
           label: item.label,
           seat: item.seat,
-          ticketType: new Set([item.ticketType]),
+          ticketType: item.ticketType && new Set([item.ticketType]),
           price: item.price,
+          count: 1,
           AdultCount: item.ticketType === 'Adult' && 1,
           SnCCount: item.ticketType === 'Senior/Child' && 1,
         });
       }
+      console.log('Con Ticket :', consolidatedTicket);
     });
 
     return consolidatedTicket;
   }
+
   const handleCloseTicketDetails = async (index: number) => {
     const closedItem = selectedTicket[index];
     const updatedTicket = [...selectedTicket];
@@ -135,10 +132,11 @@ const CheckOut: React.FC<CheckOutProps> = ({
   const handleCheckout = async () => {
     try {
       const holdToken = await createHoldToken();
-      const consolidatedTicket = consolidateLabels(ticket);
+      const consolidatedTicket = consolidateLabels(selectedTicket);
       for (const item of consolidatedTicket) {
         await holdSeats(holdToken, [item.seat]);
       }
+
       const options = {
         description: 'Credits towards consultation',
         image: 'https://i.imgur.com/3g7nmJC.png',
@@ -177,21 +175,12 @@ const CheckOut: React.FC<CheckOutProps> = ({
     }
     setSubmit(false);
   };
-
-  function handleApply() {
-    data.map(item => {
-      if (!promoApplied) {
-        if (promoCode === item.code) {
-          if (item.discountType === 'actual') {
-            setPrice(prevPrice => prevPrice - item.discountValue);
-          }
-          if (item.discountType === 'percent') {
-            setPrice(prevPrice => prevPrice * (item.discountValue / 100));
-          }
-          setPromoApplied(true);
-        }
-      }
-    });
+  function fetchSeatsCount() {
+    chartRef.current &&
+      chartRef.current
+        .getReportBySelectability()
+        .then(categories => setSeatsCount(categories.selectable));
+    console.log('Seats :', seatsCount);
   }
   const renderItem = ({item, index}) => (
     <View style={styles.categoryContainer}>
@@ -223,15 +212,21 @@ const CheckOut: React.FC<CheckOutProps> = ({
       </View>
       <View style={styles.itemContainer}>
         <View style={styles.ticketTypesContainer}>
-          {Array.from(item.ticketType).map((val, index) => (
+          {item.ticketType.size > 0 ? (
+            Array.from(item.ticketType).map((val, index) => (
+              <Text key={index} style={styles.text}>
+                {val === 'Senior/Child'
+                  ? `${item.SnCCount} x ${val}`
+                  : `${item.AdultCount} x ${val}`}
+              </Text>
+            ))
+          ) : (
             <Text key={index} style={styles.text}>
-              {val === 'Senior/Child'
-                ? `${item.SnCCount} x ${val}`
-                : `${item.AdultCount} x ${val}`}
+              {item.count}
             </Text>
-          ))}
+          )}
         </View>
-        <Text style={styles.text}>{item.price}</Text>
+        <Text style={styles.text}>₹{item.price}</Text>
       </View>
       <View style={styles.itemContainer}>
         <Text style={styles.textBold}>Tickets</Text>
@@ -247,15 +242,15 @@ const CheckOut: React.FC<CheckOutProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.promo}>
-        <Promo
-          onChangePromoCode={onChangePromoCode}
-          promoCode={promoCode}
-          handleApply={handleApply}
-        />
+        <Promo />
       </View>
       <FlatList
         scrollEnabled
-        data={selectedTicket.length > 0 ? consolidateLabels(ticket) : '1'}
+        data={
+          selectedTicket.length > 0
+            ? consolidateLabels(selectedTicket)
+            : seatsCount && seatsCount
+        }
         renderItem={selectedTicket.length > 0 ? renderSelectedItem : renderItem}
         keyExtractor={(item, index) => index.toString()}
         style={styles.flatList}
@@ -264,20 +259,20 @@ const CheckOut: React.FC<CheckOutProps> = ({
         <>
           <View style={styles.subConatiner}>
             <View style={styles.itemContainerHorizontal}>
-              <Text style={styles.textBold}>{ticket.length} Seat</Text>
-              <Text style={styles.textBold}>{price}</Text>
+              <Text style={styles.textBold}>{selectedTicket.length} Seat</Text>
+              <Text style={styles.textBold}>₹{price}</Text>
             </View>
             <View style={styles.itemContainerHorizontal}>
               <Text style={styles.text}>Processing Fee</Text>
-              <Text style={styles.text}>3</Text>
+              <Text style={styles.text}>₹3</Text>
             </View>
             <View style={styles.itemContainerHorizontal}>
               <Text style={styles.text}>Upsc Cost</Text>
-              <Text style={styles.text}>1</Text>
+              <Text style={styles.text}>₹1</Text>
             </View>
             <View style={styles.itemContainerHorizontal}>
               <Text style={styles.totalText}>Total</Text>
-              <Text style={styles.totalText}>{price}</Text>
+              <Text style={styles.totalText}>₹{price}</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -287,7 +282,6 @@ const CheckOut: React.FC<CheckOutProps> = ({
           </TouchableOpacity>
         </>
       )}
-      {/* <Terms /> */}
     </View>
   );
 };

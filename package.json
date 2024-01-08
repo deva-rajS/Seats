@@ -19,6 +19,7 @@
     "@react-native-firebase/firestore": "^18.7.3",
     "@seatsio/seatsio-react-native": "^4.5.0",
     "@types/react-native-razorpay": "^2.2.4",
+    "axios": "^1.6.4",
     "express": "^4.18.2",
     "razorpay": "^2.9.2",
     "react": "18.2.0",

@@ -1,10 +1,14 @@
-import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
-import React, {useState} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import React, {useContext, useState} from 'react';
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {faCheck} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
 library.add(faCheck);
-export default function Terms({setSubmit, hideTermsModalHandler}) {
+
+const Terms: React.FC = () => {
+  const {setSubmit, hideTermsModalHandler} =
+    useContext<SeatingContextProps>(SeatingContext);
   const [isSelected, setSelection] = useState(false);
   const toggleCheckbox = () => {
     setSelection(!isSelected);
@@ -62,8 +66,9 @@ export default function Terms({setSubmit, hideTermsModalHandler}) {
       </View>
     </View>
   );
-}
+};
 
+export default Terms;
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 15,
