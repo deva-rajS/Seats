@@ -7,35 +7,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:481080137238:android:1f76a6b97b835ff4b0c737",
-        "android_client_info": {
-          "package_name": "com.firebasedemo"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAJIPLt6591uhATgScJqLwJXrY0CeRxsz4"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:481080137238:android:773d5cc181ef0c1cb0c737",
         "android_client_info": {
           "package_name": "com.seats"
@@ -43,8 +14,12 @@
       },
       "oauth_client": [
         {
-          "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
-          "client_type": 3
+          "client_id": "481080137238-60c4is7hdl6io2qpebn7i8es73113c7t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.seats",
+            "certificate_hash": "66029fd1892e8c9661f012a3624ccd93c29112fb"
+          }
         }
       ],
       "api_key": [
@@ -56,7 +31,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "481080137238-9dvfskb6vrechn38jqijcjav4girr562.apps.googleusercontent.com",
+              "client_id": "481080137238-v70f8vje1p6mjje5vlvi3cvql4nsn7n8.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

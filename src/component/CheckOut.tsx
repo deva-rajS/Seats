@@ -4,6 +4,7 @@ import RazorpayCheckout from 'react-native-razorpay';
 import firestore from '@react-native-firebase/firestore';
 import Promo from './Promo';
 import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
+import {GoogleSignInProcess} from '../Auth/GoogleAuth';
 
 const CheckOut: React.FC = () => {
   const {
@@ -277,7 +278,9 @@ const CheckOut: React.FC = () => {
           </View>
           <TouchableOpacity
             style={styles.btnCheckout}
-            onPress={() => showTermsModalHandler()}>
+            onPress={() => {
+              GoogleSignInProcess().then(showTermsModalHandler);
+            }}>
             <Text style={styles.btnText}>Checkout</Text>
           </TouchableOpacity>
         </>

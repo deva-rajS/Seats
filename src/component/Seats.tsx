@@ -5,6 +5,8 @@ import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
 import CheckOut from './CheckOut';
 import Terms from './Terms';
 import EventHeader from './EventHeader';
+import GoogleAuth from '../Auth/GoogleAuth';
+import GoogleSignIn from '../Auth/GoogleAuth';
 
 interface SeatInfo {
   label: string;
@@ -78,6 +80,7 @@ const SimpleSeatingChartWithChangeConfig: React.FC = () => {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({item}) => (
           <View style={styles.scrollview}>
+            <GoogleSignIn />
             <EventHeader />
             <View style={styles.chart}>
               <SeatsioSeatingChart

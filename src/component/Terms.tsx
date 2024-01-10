@@ -4,6 +4,7 @@ import {library} from '@fortawesome/fontawesome-svg-core';
 import {faCheck} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {SeatingContext, SeatingContextProps} from '../context/SeatingContext';
+import {GoogleSignInProcess} from '../Auth/GoogleAuth';
 library.add(faCheck);
 
 const Terms: React.FC = () => {
